@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException,Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from deps import get_db
+from deps import get_db, require_roles
 from helpers import paginate
-from models import Author
+from models import Author, Role
 from schemas import AuthorOut, AuthorCreate
 
 router = APIRouter(prefix="/api/authors", tags=["authors"])
 
-@router.post("/",response_model=AuthorOut,status_code=201)
+@router.post("/",response_model=AuthorOut,dependencies=[Depends(require_roles(Role.admin,Role.user))],status_code=201)
 def create_author(payload:AuthorCreate,db:Session=Depends(get_db)):
     if db.query(Author).filter_by(name=payload.name).first() is not None:
         raise HTTPException(status_code=400,detail="Author already exists")

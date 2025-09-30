@@ -1,5 +1,8 @@
-from typing import List
-from pydantic import  BaseModel,Field
+from typing import List, Optional
+from pydantic import BaseModel, Field, EmailStr
+
+from models import Role
+
 
 class BookCreate(BaseModel):
     title:str=Field(min_length=1,max_length=200)
@@ -24,3 +27,24 @@ class AuthorOut(BaseModel):
     books: List[BookOut]=[]
     class Config:
         from_attributes=True
+
+class UserRegister(BaseModel):
+    email:EmailStr
+    password:str=Field(min_length=6,max_length=128)
+    role:Optional[Role]=Role.user
+
+class UserLogin(BaseModel):
+    email:EmailStr
+    password:str
+
+class UserOut(BaseModel):
+    id: int
+    email:EmailStr
+    role:Role
+    is_active:bool
+    class Config:
+        from_attributes=True
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = 'bearer'
