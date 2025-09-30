@@ -1,15 +1,12 @@
-from typing import Optional
-
-from fastapi import HTTPException,Depends,status
+from fastapi import Depends, HTTPException,status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-from database import  SessionLocal
 from jose import JWTError
-from models import User,Role
+from sqlalchemy.orm import Session
+from database import SessionLocal
+from models import Role,User
 from auth import decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-
 
 def get_db():
     db:Session = SessionLocal()
@@ -18,11 +15,13 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db)) -> Optional[User]:
-    cred_exc=HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid Credentials",headers={"WWW-Authenticate":"Bearer"})
+
+
+def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db))->User:
+    cred_exc=HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Invalid credentials",headers={"WWW-Authenticate":"Bearer"})
     try:
-        payload = decode_token(token)
-        email:str = payload.get("sub")
+        payload=decode_token(token)
+        email:str=payload.get("sub")
         if not email:
             raise cred_exc
     except JWTError:
@@ -34,8 +33,8 @@ def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db)
     return user
 
 def require_roles(*roles:Role):
-    def _dep(current:User=Depends(get_current_user)) -> User:
+    def _dep(current:User = Depends(get_current_user)) ->User:
         if current.role not in roles:
-            raise HTTPException(status_code=403, detail="Forbidden")
+            raise HTTPException(status_code=403,detail="Forbidden")
         return current
     return _dep
